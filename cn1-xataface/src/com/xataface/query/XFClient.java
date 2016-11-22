@@ -23,6 +23,7 @@ import com.codename1.ui.events.ActionEvent;
 import com.codename1.ui.events.ActionListener;
 import com.codename1.ui.layouts.BoxLayout;
 import com.codename1.ui.util.EventDispatcher;
+import com.codename1.ui.util.UITimer;
 import com.codename1.util.StringUtil;
 import com.codename1.util.SuccessCallback;
 import java.io.ByteArrayInputStream;
@@ -464,7 +465,7 @@ public class XFClient {
         c.addResponseListener(e -> {
             System.out.println("Response code: " + c.getResponseCode());
             try {
-                System.out.println("Content: " + new String(c.getResponseData(), "Utf-8"));
+                //System.out.println("Content: " + new String(c.getResponseData(), "Utf-8"));
             } catch (Exception ex) {
             }
             if (e.getResponseCode() == 401) {
@@ -486,11 +487,14 @@ public class XFClient {
             Container loginCnt = new Container();
             TextField usernameField = new TextField();
             usernameField.setText(username);
+            
 
             TextField passwordField = new TextField();
             passwordField.setText(password);
             passwordField.setConstraint(TextArea.PASSWORD);
 
+            usernameField.setNextFocusDown(passwordField);
+            
             loginCnt.setLayout(new BoxLayout(BoxLayout.Y_AXIS));
             loginCnt.addComponent(new Label("Username"));
             loginCnt.addComponent(usernameField);
@@ -498,32 +502,38 @@ public class XFClient {
             loginCnt.addComponent(passwordField);
 
             //boolean[] loggedIn = new boolean[1];
+            UITimer.timer(300, false, ()->{
+                usernameField.startEditingAsync();
+            });
+            
+            Command cmdLogin = new Command("Login") {
+                public void actionPerformed(ActionEvent e) {
+                    username = usernameField.getText();
+                    password = passwordField.getText();
+                    login(res -> {
+                        if (res) {
+                            System.out.println("1");
+                            onComplete.onSucess(res);
+                        } else {
+                            ToastBar.showErrorMessage("Login failed. Try again", 3000);
+                            handleUnauthorized(true, onComplete);
+                        }
+                        //loggedIn[0] = res;
+                    });
+
+                    //Preferences.set("username", usernameField.getText());
+                    //Preferences.set("password", passwordField.getText());
+                }
+            };
+            
+            //usernameField.addActionListener(cmdLogin);
+            //passwordField.addActionListener(cmdLogin);
+            
             
             Dialog.show("Login", loginCnt, new Command[]{
-                new Command("Login") {
-                    public void actionPerformed(ActionEvent e) {
-                        username = usernameField.getText();
-                        password = passwordField.getText();
-                        login(res -> {
-                            if (res) {
-                                System.out.println("1");
-                                onComplete.onSucess(res);
-                            } else {
-                                ToastBar.showErrorMessage("Login failed. Try again", 3000);
-                                handleUnauthorized(true, onComplete);
-                            }
-                            //loggedIn[0] = res;
-                        });
-
-                        //Preferences.set("username", usernameField.getText());
-                        //Preferences.set("password", passwordField.getText());
-                    }
-                },
+                cmdLogin,
                 new Command("Cancel") {
                     public void actionPerformed(ActionEvent e) {
-                        //login(usernameField.getText(), passwordField.getText());
-                        //loggedIn[0] = false;
-                        System.out.println("2");
                         onComplete.onSucess(false);
                     }
                 }
