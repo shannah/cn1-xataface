@@ -1,6 +1,6 @@
 # Codename One Xataface Library
 
-A web service client library that allows Codename One to connect to a Xataface application.
+A web service client library that allows [Codename One](http://www.codenameone.com) to connect to a [Xataface](http://xataface.com) application.
 
 ## License
 
@@ -13,7 +13,7 @@ Apache License 2.0
 
 ## Installation
 
-Copy the cn1-xataface.cn1lib into your project's "lib" directory, and select "Refresh cn1libs".
+Copy the [cn1-xataface.cn1lib](https://github.com/shannah/cn1-xataface/blob/master/bin/cn1-xataface.cn1lib?raw=true) into your project's "lib" directory, and select "Refresh cn1libs".
 
 ## Usage
 
@@ -73,3 +73,11 @@ client.delete(record, res->{
 
 More docs to come.
 
+## References
+
+* [Xataface Website](http://xataface.com)
+* [Codename One Website](http://www.codenameone.com)
+
+## Credits
+
+Created and maintained by [Steve Hannah](http://sjhannah.com)
