@@ -8,9 +8,11 @@ package com.xataface.query;
 import com.codename1.components.ToastBar;
 import com.codename1.io.ConnectionRequest;
 import com.codename1.io.JSONParser;
+import com.codename1.io.Log;
 import com.codename1.io.MultipartRequest;
 import com.codename1.io.NetworkEvent;
 import com.codename1.io.NetworkManager;
+import com.codename1.io.Util;
 import com.codename1.processing.Result;
 import com.codename1.ui.Command;
 import com.codename1.ui.Container;
@@ -24,8 +26,11 @@ import com.codename1.ui.events.ActionListener;
 import com.codename1.ui.layouts.BoxLayout;
 import com.codename1.ui.util.EventDispatcher;
 import com.codename1.ui.util.UITimer;
+import com.codename1.util.Callback;
 import com.codename1.util.StringUtil;
 import com.codename1.util.SuccessCallback;
+import com.codename1.xml.Element;
+import com.codename1.xml.XMLParser;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -63,6 +68,144 @@ public class XFClient {
         this.password = password;
     }
 
+    
+    public void loadNewForm(String table, SuccessCallback<Element> callback) {
+        ConnectionRequest req = new ConnectionRequest() {
+
+            @Override
+            protected void handleErrorResponseCode(int code, String message) {
+                if (code == 401) {
+                    return;
+                }
+                super.handleErrorResponseCode(code, message);
+            }
+            
+        };
+        req.setReadResponseForErrors(true);
+        req.setUrl(url);
+        req.setHttpMethod("GET");
+        req.setPost(false);
+        req.addArgument("-table", table);
+        req.addArgument("-action", "new");
+        req.addArgument("-format", "xml");
+        req.addArgument("--date-format", "server");
+        
+        req.addArgument("--no-prompt", "1");
+        
+        req.addResponseListener(e -> {
+
+            if (e.getResponseCode() == 401) {
+                // We need to log in
+                handleUnauthorized(false, res -> {
+                    if (res) {
+                        loadNewForm(table, callback);
+                    } else {
+                        if (errorHandler != null) {
+                            errorHandler.fireActionEvent(new ActionEvent("Unauthorized"));
+                        }
+                        callback.onSucess(null);
+                    }
+                });
+                return;
+
+            }
+
+            XMLParser xp = new XMLParser();
+            try {
+                Element el = xp.parse(new InputStreamReader(new ByteArrayInputStream(req.getResponseData()), "UTF-8"));
+                callback.onSucess(el);
+                return;
+            } catch (IOException ex) {
+                if (callback instanceof Callback) {
+                    ((Callback)callback).onError(XFClient.this, ex, 0, ex.getMessage());
+                    return;
+                } else {
+                    if (errorHandler != null) {
+                        errorHandler.fireActionEvent(new ActionEvent("Failed to parse XML: " + ex.getMessage()));
+                    } else {
+                        Log.e(ex);
+                    }
+                    callback.onSucess(null);
+                }
+            }
+            
+            
+        });
+
+        NetworkManager.getInstance().addToQueue(req);
+    }
+    
+    public void loadEditForm(XFRecord record, SuccessCallback<Element> callback) {
+        ConnectionRequest req = new ConnectionRequest() {
+
+            @Override
+            protected void handleErrorResponseCode(int code, String message) {
+                if (code == 401) {
+                    return;
+                }
+                super.handleErrorResponseCode(code, message);
+            }
+            
+        };
+        req.setReadResponseForErrors(true);
+        req.setUrl(url);
+        req.setHttpMethod("GET");
+        req.setPost(false);
+        req.addArgument("-table", record.getTable());
+        req.addArgument("-action", "edit");
+        req.addArgument("-format", "xml");
+        req.addArgument("--record-id", record.getId());
+        req.addArgument("--no-prompt", "1");
+        req.addArgument("--date-format", "server");
+        
+        req.addResponseListener(e -> {
+
+            if (e.getResponseCode() == 401) {
+                // We need to log in
+                handleUnauthorized(false, res -> {
+                    if (res) {
+                        loadEditForm(record, callback);
+                    } else {
+                        if (errorHandler != null) {
+                            errorHandler.fireActionEvent(new ActionEvent("Unauthorized"));
+                        }
+                        callback.onSucess(null);
+                    }
+                });
+                return;
+
+            }
+
+            XMLParser xp = new XMLParser();
+            try {
+                Element el = xp.parse(new InputStreamReader(new ByteArrayInputStream(req.getResponseData()), "UTF-8"));
+                callback.onSucess(el);
+                return;
+            } catch (IOException ex) {
+                if (callback instanceof Callback) {
+                    ((Callback)callback).onError(XFClient.this, ex, 0, ex.getMessage());
+                    return;
+                } else {
+                    if (errorHandler != null) {
+                        errorHandler.fireActionEvent(new ActionEvent("Failed to parse XML: " + ex.getMessage()));
+                    } else {
+                        Log.e(ex);
+                    }
+                    callback.onSucess(null);
+                }
+            }
+            
+            
+        });
+
+        NetworkManager.getInstance().addToQueue(req);
+    }
+    
+    /**
+     * Finds a result set.
+     * @param query
+     * @param callback 
+     */
     public void find(XFQuery query, SuccessCallback<XFRowSet> callback) {
 
         ConnectionRequest req = new ConnectionRequest() {
@@ -140,6 +283,15 @@ public class XFClient {
 
     }
 
+    /**
+     * Alias of {@link #findSync}
+     * @param query
+     * @return 
+     */
+    public XFRowSet findAndWait(XFQuery query) {
+        return findSync(query);
+    }
+    
     public XFRowSet findSync(XFQuery query) {
         Object[] out = new Object[1];
         boolean[] complete = new boolean[1];
@@ -199,6 +351,14 @@ public class XFClient {
         return path;
     }
 
+    private void addArgument(ConnectionRequest req, boolean multipart, String key, String val) {
+        if (multipart) {
+            req.addArgumentNoEncoding(key, Util.encodeUrl(val));
+        } else {
+            req.addArgument(key, val);
+        }
+    }
+    
     public void save(XFRecord record, SuccessCallback<XFRecord> callback) {
 
         if (!record.changed()) {
@@ -207,8 +367,10 @@ public class XFClient {
         }
 
         ConnectionRequest req;
+        boolean multipart = false;
         if (record.changedFiles()) {
             req = new MultipartRequest();
+            multipart = true;
         } else {
             req = new ConnectionRequest();
         }
@@ -227,8 +389,9 @@ public class XFClient {
             }
             first = false;
             fieldsFld.append(col);
-            req.addArgument(col, record.getSerializedValue(col));
+            addArgument(req, multipart, col, record.getSerializedValue(col));
         }
+        req.addArgument("--no-query", "1");
 
         if (record.changedFiles()) {
             if (!first) {
@@ -251,7 +414,7 @@ public class XFClient {
             }
 
         }
-        req.addArgument("-fields", fieldsFld.toString());
+        addArgument(req, multipart, "-fields", fieldsFld.toString());
         req.addArgument("-table", record.getTable());
         req.addArgument("--session:save", "Save");
         req.addArgument("--escape-json", "n");
@@ -266,7 +429,7 @@ public class XFClient {
             //req.addArgument("__keys__[id]", record.getString("id"));
             Map<String,String> keys = record.parseId();
             for (String col : keys.keySet()) {
-                req.addArgument("__keys__["+col+"]", keys.get(col));
+                addArgument(req, multipart, "__keys__["+col+"]", keys.get(col));
             }
 
         }
@@ -274,6 +437,7 @@ public class XFClient {
 
         req.addArgument("-response", "json");
         req.addArgument("--no-prompt", "1");
+        req.addArgument("--date-format", "server");
 
         req.addResponseListener(nevt -> {
             if (nevt.getResponseCode() == 401) {

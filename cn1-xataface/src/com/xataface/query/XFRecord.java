@@ -11,12 +11,15 @@ import com.codename1.l10n.DateFormat;
 import com.codename1.l10n.ParseException;
 import com.codename1.l10n.SimpleDateFormat;
 import com.codename1.processing.Result;
+import com.xataface.utils.json.core.JSONArray;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
@@ -51,6 +54,14 @@ public class XFRecord {
         this.data = data;
         this.columnNames.addAll(columnNames);
         this.client = client;
+    }
+    
+    public DateFormat getServerDateFormat() {
+        return serverDateFormat;
+    }
+    
+    public DateFormat getOutputDateFormat() {
+        return outputDateFormat;
     }
     
     public XFRecord(XFClient client, String table, String id) {
@@ -146,6 +157,13 @@ public class XFRecord {
         return data.getAsInteger(column);
     }
     
+    public boolean isset(String column) {
+        if (changed(column)) {
+            return true;
+        }
+        return data.get(column) != null;
+    }
+    
     public long getLong(String column) {
         if (changed(column)) {
             return (long)updates.get(column);
@@ -168,6 +186,45 @@ public class XFRecord {
             return outputDateFormat.format(d);
         }
         return data.getAsString(column);
+    }
+    
+    public List<String> getList(String column) {
+        if (changed(column)) {
+            Object o = updates.get(column);
+            List out = new ArrayList();
+            if (o instanceof Collection) {
+                for (Object oi : (Collection)o) {
+                    out.add(String.valueOf(oi));
+                }
+                
+            } else if (o != null) {
+                out.add(String.valueOf(o));  
+            }
+            
+            return out;
+        }
+        List<String> tmp = data.getAsArray(column);
+        List<String> l = new ArrayList<String>();
+        if (tmp != null) {
+            for (Object o : tmp) {
+                l.add(String.valueOf(o));
+            }
+        }
+        return l;
+        
+    }
+    
+    
+    public void add(String column, Object value) {
+        List l = getList(column);
+        l.add(String.valueOf(value));
+        updates.put(column, l);
+    }
+    
+    public void remove(String column, Object value) {
+        List l = getList(column);
+        l.remove(String.valueOf(value));
+        updates.put(column, l);
     }
     
     private boolean isDateStruct(Object o) {
@@ -212,7 +269,12 @@ public class XFRecord {
         }
         
         try {
-            return serverDateFormat.parse(getString(column));
+            String str = getString(column);
+            if (str != null) {
+                return serverDateFormat.parse(str);
+            } else {
+                return null;
+            }
         } catch (ParseException ex) {
             try {
                 return new Date(Long.parseLong(getString(column)));
@@ -359,6 +421,15 @@ public class XFRecord {
         updates().put(column, value);
     }
     
+    public void set(String column, String dateValue, DateFormat dateFormat) throws ParseException {
+        if (dateValue == null || dateValue.trim().length() == 0) {
+            updates().put(column, null);
+            return;
+        }
+        updates().put(column, dateFormat.parse(dateValue));
+    }
+    
+    
     public void setId(String id) {
         this.id = id;
     }
@@ -368,11 +439,27 @@ public class XFRecord {
     }
     
     
+    private String listToJSON(List<String> l) {
+        JSONArray a = new JSONArray();
+        int index = 0;
+        try {
+            for (String s : l) {
+                a.put(index++, s);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+        return a.toString();
+        
+    }
+    
     String getSerializedValue(String column) {
         if (changed(column)) {
             Object val = updates().get(column);
             if (val instanceof Date) {
                 return formatDateForServer((Date)val);
+            } else if (val instanceof List) {
+                return listToJSON((List<String>)val);
             } else {
                 return String.valueOf(val);
             }

@@ -14,8 +14,10 @@ import com.codename1.ui.Display;
 import com.codename1.ui.TextField;
 import com.codename1.ui.animations.CommonTransitions;
 import com.codename1.ui.events.ActionEvent;
+import com.codename1.ui.events.ActionListener;
 import com.codename1.ui.layouts.BorderLayout;
 import com.codename1.ui.table.TableLayout;
+import com.codename1.ui.util.EventDispatcher;
 import com.xataface.query.XFClient;
 import com.xataface.query.XFRecord;
 
@@ -30,9 +32,14 @@ public class XFUIPropertiesPanel extends Container {
     private XFUIEditorKit editorKit = new XFUIEditorKit();
     
     
+    
+    
     public XFClient getClient() {
         return client;
     }
+    
+    
+    
     
     public static interface ViewFactory {
         public Component createWidget(XFUIPropertiesPanel propertiesPanel, XFRecord record, String column);

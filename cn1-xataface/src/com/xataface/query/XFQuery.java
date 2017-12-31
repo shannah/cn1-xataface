@@ -325,6 +325,8 @@ public class XFQuery {
                 req.addArgument("--displayMethod", "html");
                 break;
         }
+        
+        req.addArgument("--filesDisplayMode", "getURL");
 
         
         if (selectedIds != null && !selectedIds.isEmpty()) {
