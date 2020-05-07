@@ -81,11 +81,12 @@
         <ant dir="../CN1XatafaceDemo" target="refresh-libs"/>
         <copy file="dist/${application.title}.cn1lib" todir="../SakilaMySQLDemo/lib"/>
         <ant dir="../SakilaMySQLDemo" target="refresh-libs"/>
-        <copy file="dist/${application.title}.cn1lib" todir="../MySQLContactsDemo/lib"/>
-        <ant dir="../MySQLContactsDemo" target="refresh-libs"/>
+        <!--<copy file="dist/${application.title}.cn1lib" todir="../MySQLContactsDemo/lib"/>-->
+        <!--<ant dir="../MySQLContactsDemo" target="refresh-libs"/>-->
     </target>
 
     <target name="buildNativeRIM">
+        <mkdir dir="native/rim"/>
         <path id="rimNativeDir">
             <fileset dir="native/rim"/>
         </path> 
@@ -104,6 +105,7 @@
     </target>
 
     <target name="buildNativeAND">
+        <mkdir dir="native/android"/>
         <path id="andNativeDir">
             <fileset dir="native/android"/>
         </path> 
@@ -144,6 +146,7 @@
     </target>
 
     <target name="buildNativeWIN">
+        <mkdir dir="native/win"/>
         <path id="winNativeDir">
             <fileset dir="native/win"/>
         </path> 
@@ -162,6 +165,7 @@
     </target>
 
     <target name="buildNativeIOS">
+        <mkdir dir="native/ios"/>
         <path id="iosNativeDir">
             <fileset dir="native/ios"/>
         </path> 
@@ -180,6 +184,7 @@
     </target>
 
     <target name="buildNativeME">
+        <mkdir dir="native/j2me"/>
         <path id="meNativeDir">
             <fileset dir="native/j2me"/>
         </path> 
@@ -199,6 +204,7 @@
 
     
     <target name="buildNativeJS">
+        <mkdir dir="native/javascript"/>
         <path id="jsNativeDir">
             <fileset dir="native/javascript"/>
         </path> 

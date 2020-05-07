@@ -1,2 +1,10 @@
 MySQLContactsDemo
 *.class
+dist
+build
+*.jar
+private
+lib/impl
+CN1XatafaceDemo/lib/impl/
+SakilaMySQLDemo/lib/impl/
+cn1-xataface/build

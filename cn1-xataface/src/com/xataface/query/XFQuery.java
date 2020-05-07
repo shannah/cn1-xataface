@@ -21,6 +21,34 @@ import java.util.Map;
  */
 public class XFQuery {
 
+    /**
+     * @return the timeout
+     */
+    public int getTimeout() {
+        return timeout;
+    }
+
+    /**
+     * @param timeout the timeout to set
+     */
+    public void setTimeout(int timeout) {
+        this.timeout = timeout;
+    }
+
+    /**
+     * @return the readTimeout
+     */
+    public int getReadTimeout() {
+        return readTimeout;
+    }
+
+    /**
+     * @param readTimeout the readTimeout to set
+     */
+    public void setReadTimeout(int readTimeout) {
+        this.readTimeout = readTimeout;
+    }
+
     private String table;
     private Map<String, ColumnFilter> columnFilters = new HashMap<String, ColumnFilter>();
     private String search;
@@ -35,6 +63,8 @@ public class XFQuery {
     private FindMode findMode = FindMode.ALL;
     private String profile = "basic";
     private List<ColumnSort> sort = new ArrayList<ColumnSort>();
+    private int timeout;
+    private int readTimeout;
 
     private List<String> selectedIds;
 

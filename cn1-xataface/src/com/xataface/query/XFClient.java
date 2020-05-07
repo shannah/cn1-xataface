@@ -45,10 +45,40 @@ import java.util.TimeZone;
  */
 public class XFClient {
 
+    /**
+     * @return the timeout
+     */
+    public int getTimeout() {
+        return timeout;
+    }
+
+    /**
+     * @param timeout the timeout to set
+     */
+    public void setTimeout(int timeout) {
+        this.timeout = timeout;
+    }
+
+    /**
+     * @return the readTimeout
+     */
+    public int getReadTimeout() {
+        return readTimeout;
+    }
+
+    /**
+     * @param readTimeout the readTimeout to set
+     */
+    public void setReadTimeout(int readTimeout) {
+        this.readTimeout = readTimeout;
+    }
+
     private String username;
     private String password;
     private String url;
     private TimeZone serverTimeZone;
+    private int timeout=-1;
+    private int readTimeout=-1;
 
     EventDispatcher errorHandler;
 
@@ -89,7 +119,7 @@ public class XFClient {
         req.addArgument("-action", "new");
         req.addArgument("-format", "xml");
         req.addArgument("--date-format", "server");
-        
+        setupConnection(req);
         req.addArgument("--no-prompt", "1");
         
         req.addResponseListener(e -> {
@@ -151,12 +181,14 @@ public class XFClient {
         req.setUrl(url);
         req.setHttpMethod("GET");
         req.setPost(false);
+        
         req.addArgument("-table", record.getTable());
         req.addArgument("-action", "edit");
         req.addArgument("-format", "xml");
         req.addArgument("--record-id", record.getId());
         req.addArgument("--no-prompt", "1");
         req.addArgument("--date-format", "server");
+        setupConnection(req);
         
         req.addResponseListener(e -> {
 
@@ -201,6 +233,26 @@ public class XFClient {
         NetworkManager.getInstance().addToQueue(req);
     }
     
+    protected void setupConnection(ConnectionRequest req) {
+        if (timeout > 0) {
+            req.setTimeout(timeout);
+        }
+        if (readTimeout > 0) {
+            req.setReadTimeout(readTimeout);
+        }
+    }
+    
+    protected void setupConnection(XFQuery query, ConnectionRequest req) {
+        setupConnection(req);
+        if (query.getTimeout() > 0) {
+            req.setTimeout(query.getTimeout());
+        }
+        if (query.getReadTimeout() > 0) {
+            req.setReadTimeout(query.getReadTimeout());
+        }
+        
+    }
+    
     /**
      * Finds a result set.
      * @param query
@@ -223,6 +275,7 @@ public class XFClient {
         req.setUrl(url);
         req.setHttpMethod("GET");
         req.setPost(false);
+        setupConnection(query, req);
         query.setupRequest(req);
         req.addArgument("--no-prompt", "1");
         System.out.println("About to send request");
@@ -374,7 +427,7 @@ public class XFClient {
         } else {
             req = new ConnectionRequest();
         }
-
+        setupConnection(req);
         req.setReadResponseForErrors(true);
         req.setUrl(url);
         req.setPost(true);
@@ -499,6 +552,7 @@ public class XFClient {
             }
             
         };
+        setupConnection(req);
         req.setUrl(url);
         req.setPost(true);
         req.setHttpMethod("POST");
@@ -587,7 +641,7 @@ public class XFClient {
         c.setUrl(url);
         c.setPost(true);
         c.setReadResponseForErrors(true);
-        
+        setupConnection(c);
         c.addArgument("-action", "logout");
         c.addArgument("--no-prompt", "1");
         c.addResponseListener(e -> {
@@ -617,6 +671,7 @@ public class XFClient {
             }
             
         };
+        setupConnection(c);
         c.setUrl(url);
         c.setPost(true);
         c.setReadResponseForErrors(true);
