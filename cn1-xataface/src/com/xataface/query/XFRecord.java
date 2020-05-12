@@ -176,6 +176,18 @@ public class XFRecord {
         return data.getAsLong(column);
     }
     
+    public long getUnixTime(String column) {
+        if (changed(column)) {
+            return (long) updates.get(column);
+        }
+        Object v = data.get(column);
+        if (isDateStruct(v)) {
+            Result res = Result.fromContent((Map) v);
+            return res.getAsLong("unixtime");
+        }
+        return data.getAsLong(column);
+    }
+    
     public String getString(String column) {
         if (changed(column)) {
             return (String)updates.get(column);
